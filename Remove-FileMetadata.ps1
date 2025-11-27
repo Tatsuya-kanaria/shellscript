@@ -34,9 +34,7 @@ Function Remove-FileMetadata {
     foreach ($File in $Files) {
         $OriginalName = $File.Name
 
-        # 🌟 修正ロジック: ファイル名全体から括弧の始まりとそれ以降を削除 🌟
-        # $File.Name ではなく $File.BaseName を使用し、ファイル名（拡張子なし）を対象とします。
-        # '\s*\(.*' : スペース(0回以上)と括弧の始まり '(' から、文字列の末尾まで全てにマッチ
+        # 括弧以降を削除
         $BaseNameOnly = $File.BaseName -replace '\s*\(.*', ''
 
         # 新しいファイル名（拡張子付き）を構築
@@ -48,10 +46,11 @@ Function Remove-FileMetadata {
             continue
         }
 
-        $IsWhatIf = $PSCmdlet.MyInvocation.BoundParameters.ContainsKey('WhatIf')
+
         # ShouldProcessを実行し、リネームの可否を判断
         $ProcessResult = $PSCmdlet.ShouldProcess($OriginalName, "括弧から末尾までの削除")
 
+        $IsWhatIf = $WhatIfPreference #-eq 'Continue'
         # 1. -WhatIf モードの場合、カスタムでリネーム後の名前を表示
         if ($IsWhatIf) {
             Write-Host "WHATIF: '$OriginalName' -> '$NewName'" -ForegroundColor Yellow
@@ -60,8 +59,8 @@ Function Remove-FileMetadata {
         # 2. ShouldProcess で確認し、リネームを実行
         if ($ProcessResult) {
 
-            # Rename-Item自体に-WhatIfの有無を任せる
-            Rename-Item -Path $File.FullName -NewName $NewName
+            # Rename-Itemに-WhatIfを明示的に渡す
+            Rename-Item -Path $File.FullName -NewName $NewName -WhatIf:$WhatIfPreference
 
             # 実際のリネーム時のみ、実行結果を表示
             if (-not $IsWhatIf) {
@@ -71,7 +70,7 @@ Function Remove-FileMetadata {
     }
 
     Write-Host "---"
-    Write-Host "すべての削除処理が完了しました。"
+    Write-Host "すべての処理が完了しました。"
 }
 
 ### 使用例
